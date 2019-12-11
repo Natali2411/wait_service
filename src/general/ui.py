@@ -53,7 +53,7 @@ class WebUI():
             self.wait.wait_present_element_located(button_locator)
             self.wait.wait_until_element_clickable(button_locator)
             button = button or self.driver.find_element(*button_locator)
-            self.move_to_element(element=button)
+        self.move_to_element(element=button)
         try:
             button.click()
         except WebDriverException:
@@ -68,3 +68,10 @@ class WebUI():
                     "Error modal window with title: 'Our Apologies. Something Went Wrong.' is appeared\n")
         except (ElementNotVisibleException, NoSuchElementException):
             print("Modal error window is absent\n")
+
+
+    def clear_storages(self):
+        self.driver.execute_script("window.localStorage.clear();")
+        self.driver.execute_script("window.sessionStorage.clear();")
+        self.driver.refresh()
+        self.wait_loader_disappear()

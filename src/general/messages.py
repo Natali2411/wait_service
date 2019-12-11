@@ -1,0 +1,5 @@
+modal_clock_out_win_title = "WARNING"
+modal_clock_out_win_content = "You don’t have a lunch break. Do you wan’t clock out without lunch?"
+modal_clock_out_lunch_content = "This action will end your lunch break and clock you out. Would you like to continue?"
+modal_clock_in_other_store_content = "This action will clock you out of {0} and clock you into {1}. Would you like to continue?"
+select_location_label = "Choose Your Location*:"

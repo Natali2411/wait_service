@@ -3,7 +3,7 @@ from src.clock_in_out.clock_in_out import ClockInOut
 import config
 import pytest
 
-class TestClockInOutWithLunch():
+class TestClockInOutInFewStores():
 
     @pytest.fixture(scope="module")
     def login_obj(self, chr_driver):
@@ -41,13 +41,23 @@ class TestClockInOutWithLunch():
         clock_obj.start_lunch(password=config.password1, login_obj=login_obj)
         clock_obj.check_time_management_row_db(tm_type="Lunch", tm_action="start lunch")
 
-    def test_end_lunch(self, login_obj, clock_obj):
-        clock_obj.end_lunch(password=config.password1, login_obj=login_obj)
-        clock_obj.check_time_management_row_db(tm_type="Lunch", tm_action="end lunch")
+
+    def test_clock_in_another_store(self, clock_obj):
+        clock_obj.move_to_store_selection_win()
+        clock_obj.clock_in_user_to_another_store()
+
+
+    def test_check_clock_in_new_store(self, login_obj, clock_obj):
+        login_obj.login_time_clock_user(password=config.password1)
+        clock_obj.check_time_management_row_db(tm_type="ClockInOut", tm_action="clock in")
 
 
     def test_clock_out(self, login_obj, clock_obj):
-        clock_obj.clock_out(password=config.password1, login_obj=login_obj, lunch=True, clock_out_lunch=False)
+        clock_obj.clock_out(password=config.password1, login_obj=login_obj, lunch=False, clock_out_lunch=False)
+        clock_obj.check_time_management_row_db(tm_type="ClockInOut", tm_action="clock out")
+
+
+    def test_check_clock_out_new_store(self, login_obj, clock_obj):
         clock_obj.check_time_management_row_db(tm_type="ClockInOut", tm_action="clock out")
 
 
