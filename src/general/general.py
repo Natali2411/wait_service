@@ -103,7 +103,10 @@ class ParseList():
     def return_sql_in_list(self, param_list):
         s, res_s = "", " in ({0})"
         for i in range(len(param_list)):
-            s = s + str(param_list[i]) + ", "
+            if type(param_list[i]) == str:
+                s = s + "'" + str(param_list[i]) + "', "
+            else:
+                s = s + str(param_list[i]) + ", "
         return res_s.format(s[:-2])
 
 

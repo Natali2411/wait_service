@@ -1,7 +1,10 @@
 from src.general.wait import Wait
 from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException, TimeoutException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
 from src.general.base_locators import BasePageLocators
+from selenium.webdriver.common.by import By
 
 class WebUI():
 
@@ -73,5 +76,38 @@ class WebUI():
     def clear_storages(self):
         self.driver.execute_script("window.localStorage.clear();")
         self.driver.execute_script("window.sessionStorage.clear();")
+        self.driver.execute_script("history.go(0);")
         self.driver.refresh()
         self.wait_loader_disappear()
+
+
+    def ctrl_f5_action(self):
+        action = ActionChains(driver=self.driver)
+        action.key_down(Keys.CONTROL).key_down(Keys.F5).key_up(Keys.CONTROL).key_up(Keys.F5).perform()
+        self.wait_loader_disappear()
+
+
+    def check_and_close_popup_message(self):
+        try:
+            Wait(driver=self.driver, timeout=5).wait_present_element_located(self.base_locators.popup_message)
+            popup_save_message = self.driver.find_element(*self.base_locators.popup_message)
+            close_popup_btns = popup_save_message.find_elements(By.TAG_NAME, "button")
+            for i in close_popup_btns:
+                try:
+                    i.click()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+
+    def choose_select_option(self, select_option_loc, index=None, visible_text=None, value=None, wait_obj=None):
+        wait_obj = wait_obj or self.wait
+        wait_obj.wait_present_element_located(locator=select_option_loc)
+        select = Select(self.driver.find_element(*select_option_loc))
+        if index:
+            select.select_by_index(index)
+        elif visible_text:
+            select.select_by_visible_text(visible_text)
+        elif value:
+            select.select_by_value(value)

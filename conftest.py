@@ -33,7 +33,5 @@ def chr_driver(request, chr_options):
     driver = webdriver.Chrome(
             executable_path="D:\Repositories\TimeClockAutomation\src\exe\chromedriver.exe",
             options=chr_options, desired_capabilities={"loggingPrefs": {'browser': 'ALL'}})
-
-    driver.get(config.qa_env['time_clock_url'])
     yield driver
     #driver.quit()

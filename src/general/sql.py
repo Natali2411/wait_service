@@ -1,6 +1,6 @@
 import pyodbc
 import config
-
+from src.general.general import ParseStr, ParseList
 
 class SQLGeneral():
 
@@ -55,3 +55,82 @@ class SQLGeneral():
         for row in cursor.fetchall():
             results.append(dict(zip(columns, row)))
         return results
+
+
+    def get_action_id_by_name(self, action_name_list):
+        pl = ParseList()
+        sql_string = "select id, name from Actions a where a.name "
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_string + pl.return_sql_in_list(action_name_list))
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+
+    def add_user_permission(self, user_guid_id, action_id, is_access, location_id, current_user_name="b2bsupport"):
+        sql_exec = "exec spUserPermissionsAdd @UserID='{0}',@ActionsID='{1}',@IsAccess={2},@LocationID={3},@CurrentUserName='{4}'"
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_exec.format(user_guid_id, action_id, str(is_access), str(location_id), current_user_name))
+        cursor.commit()
+
+
+    def get_user_permission(self, user_name, action_name, is_access):
+        sql_string = "select up.*, l.DisplayName from UserPermissions up " \
+                     "join Actions a on a.ID = up.ActionsID " \
+                     "join SYS_users u on u.ID_GUID = up.SYS_usersId_GUID " \
+                     "join Location l on up.LocationId = l.ID " \
+                     "where a.Name = '{0}' and u.username = '{1}' and up.IsAccess = {2} and up.LocationId != 0"
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_string.format(action_name, user_name, str(is_access)))
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+
+    def get_user_perm_access_by_locations(self, user_name, signature, is_access):
+        sql_exec = "exec GetUserPermissionAccessByLocations @UserName='{0}',@Signature='{1}'"
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_exec.format(user_name, signature))
+        columns = [column[0] for column in cursor.description]
+        res_db = cursor.fetchall()
+        results = []
+        for i in range(len(res_db)):
+            if res_db[i][3] == int(is_access):
+                results.append(dict(zip(columns, res_db[i])))
+        return results
+
+
+    def get_action_signature(self, action_name):
+        sql_string = "select s.actionid, s.signature from ActionSignature s " \
+                     "join Actions a on a.ID = s.ActionID " \
+                     "where a.Name = '{0}'"
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_string.format(action_name))
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+
+    def get_b2bsession_id(self):
+        """Get B2B Session ID by database name"""
+        try:
+            select = "select top 1 ID from was_Session where DBName = ? order by StartTime"
+            db = pyodbc.connect(self.db_connection(config.was_database))
+            cursor = db.cursor()
+            cursor.execute(select, config.database)
+            session_l = cursor.fetchone()
+            session = session_l.ID
+            return session
+        except:
+            return "Session ID wasn't found"
