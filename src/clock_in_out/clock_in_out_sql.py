@@ -81,6 +81,7 @@ class ClockInOutSQL(SQLGeneral):
         p, sql_string, c = ParseStr(), "", Converter()
         if method.lower() == "get":
             sql_string = self.prepare_sql_time_managment(param_dict=param_dict)
+            print(sql_string)
         elif method.lower() == "post":
             sql_string = self.prepare_sql_time_manag_search(param_dict=param_dict)
         db = pyodbc.connect(self.db_connection(config.database))
@@ -146,3 +147,7 @@ class ClockInOutSQL(SQLGeneral):
                 results[-1]["logoffDateTime"] = p.parse_datetime_str(results[-1]["logoffDateTime"].__str__()) + "Z"
                 results[-1]["createdAt"] = p.parse_datetime_str(results[-1]["createdAt"].__str__()) + "Z"
         return results
+
+if __name__=="__main__":
+    c = ClockInOutSQL()
+    print(c.prepare_sql_time_managment(param_dict={'isremove': 1, "storeid": 12}))

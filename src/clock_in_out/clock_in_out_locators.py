@@ -24,7 +24,6 @@ class ClockInOutPageLocators(BasePageLocators):
     break_hours_div = (By.XPATH, "//div[text()='Break Time']/following-sibling::div[@class='time-box__value']")
 
     # timesheet table
-    expand_time_sheet_row_div = (By.CLASS_NAME, "rt-expander")
     clock_in_svg = (By.XPATH, "//div[@class='header-icon-container']/*[@class='icon icon-clockin']")
     clock_out_svg = (By.XPATH, "//div[@class='header-icon-container']/*[@class='icon icon-clockout']")
     clock_in_out_svg = (By.XPATH, "//*[@class='icon icon-clockinout']")
@@ -42,3 +41,7 @@ class ClockInOutPageLocators(BasePageLocators):
     jump_to_page_input = (By.XPATH, "//input[@aria-label='jump to page']")
     next_btn = (By.XPATH, "//button[text()='Next']")
     previous_btn = (By.XPATH, "//button[text()='Previous']")
+    duration_hint_span = (By.XPATH, "//div[text()='Duration']/span")
+    duration_tooltip_div = (By.ID, "main-tooltip")
+    date_from_btn = (By.XPATH, "//input[@name='dateFrom']/..//button")
+    date_to_btn = (By.XPATH, "//input[@name='dateTo']/..//button")

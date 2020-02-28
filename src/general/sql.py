@@ -48,6 +48,8 @@ class SQLGeneral():
         if is_active:
             sql_string += " and u.Active = {0} ".format(is_active)
         if full_name:
+            full_name = full_name.split()
+            full_name = full_name[0] + ", " + full_name[1]
             sql_string += " and u.FullName = '{0}' ".format(full_name)
         cursor.execute(sql_string)
         columns = [column[0] for column in cursor.description]
@@ -68,6 +70,21 @@ class SQLGeneral():
         for row in cursor.fetchall():
             results.append(dict(zip(columns, row)))
         return results
+
+
+    def get_child_action_id_by_name(self, action_name_list, child_action_name_list):
+        pl = ParseList()
+        results = []
+        actions = self.get_action_id_by_name(action_name_list=action_name_list)
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        for i in actions:
+            sql_string = "select id, name from Actions a where a.ParentID = '{0}' and a.name "
+            cursor.execute(sql_string.format(i["id"]) + pl.return_sql_in_list(child_action_name_list))
+            columns = [column[0] for column in cursor.description]
+            for row in cursor.fetchall():
+                results.append(dict(zip(columns, row)))
+            return results
 
 
     def add_user_permission(self, user_guid_id, action_id, is_access, location_id, current_user_name="b2bsupport"):
@@ -99,6 +116,7 @@ class SQLGeneral():
         db = pyodbc.connect(self.db_connection(config.database))
         cursor = db.cursor()
         cursor.execute(sql_exec.format(user_name, signature))
+        print(sql_exec.format(user_name, signature))
         columns = [column[0] for column in cursor.description]
         res_db = cursor.fetchall()
         results = []
@@ -120,6 +138,22 @@ class SQLGeneral():
         for row in cursor.fetchall():
             results.append(dict(zip(columns, row)))
         return results
+
+
+    def get_child_action_signature(self, action_name, child_action_name):
+        parent_actionid = self.get_action_signature(action_name=action_name)[0]["actionid"]
+        sql_string = "select s.actionid, s.signature from ActionSignature s " \
+                     "join Actions a on a.ID = s.ActionID " \
+                     "where a.Name = '{0}' and a.ParentID = '{1}'"
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        cursor.execute(sql_string.format(child_action_name, parent_actionid))
+        columns = [column[0] for column in cursor.description]
+        results = []
+        for row in cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
 
 
     def get_b2bsession_id(self):

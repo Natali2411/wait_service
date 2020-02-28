@@ -26,6 +26,10 @@ class WebUI():
         self.wait_loader_disappear()
 
 
+    def send_esc_key(self):
+        return ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+
+
     def send_data_to_field(self, element=None, data=None, locator=None):
         if locator:
             self.wait.wait_present_element_located(locator)
@@ -51,12 +55,13 @@ class WebUI():
     def wait_button_and_click(self, button_locator=None, button=None):
         self.wait_loader_disappear()
         if button:
+            self.move_to_element(element=button)
             self.wait.wait_until_element_visible(element=button)
         elif button_locator:
             self.wait.wait_present_element_located(button_locator)
             self.wait.wait_until_element_clickable(button_locator)
             button = button or self.driver.find_element(*button_locator)
-        self.move_to_element(element=button)
+            self.move_to_element(element=button)
         try:
             button.click()
         except WebDriverException:
@@ -111,3 +116,9 @@ class WebUI():
             select.select_by_visible_text(visible_text)
         elif value:
             select.select_by_value(value)
+
+
+    def hover_element(self, locator=None, element=None):
+        element_to_hover_over = element or self.driver.find_element(*locator)
+        hover = ActionChains(self.driver).move_to_element(element_to_hover_over)
+        hover.perform()

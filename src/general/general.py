@@ -1,6 +1,9 @@
-import string, random, json, deepdiff
+import string, random, json, deepdiff, traceback
 from datetime import datetime, timedelta
 from pytz import timezone
+import pathlib, allure, sys, os, time
+import config
+from allure_commons.types import AttachmentType
 
 
 class Randomizer():
@@ -28,12 +31,12 @@ class Randomizer():
 class Compare():
 
     def correct_message(self, parameter_name, expected_value, actual_value):
-        print(parameter_name + " - has correct value in response\DataBase\n")
-        print(parameter_name + ": Actual value: " + str(actual_value) + " is equal to: " + str(expected_value) + "\n")
+        print(str(parameter_name) + " - has correct value in response\DataBase\n")
+        print(str(parameter_name) + ": Actual value: " + str(actual_value) + " is equal to: " + str(expected_value) + "\n")
 
 
     def incorrect_message(self, parameter_name, expected_value, actual_value):
-        raise AssertionError (parameter_name + " " + str(expected_value) + " has incorrect value in response: " + str(actual_value))
+        raise AssertionError(str(parameter_name) + " " + str(expected_value) + " has incorrect value in response: " + str(actual_value))
 
 
     def compare_strings(self, parameter_name, expected_value, actual_value):
@@ -51,7 +54,7 @@ class Compare():
         if str(searched_val).lower() in str(in_str_val).lower():
             print("'" + searched_val + "' is in the text: '" + in_str_val + "'\n")
         else:
-            raise AssertionError("'" + searched_val + "' wasn't found in the text: '" + in_str_val + "'\n")
+            raise AssertionError("'" + str(searched_val) + "' wasn't found in the text: '" + str(in_str_val) + "'\n")
 
 
     def compare_strings_lower_strip(self, parameter_name, expected_value, actual_value):
@@ -93,9 +96,16 @@ class Compare():
 
     def compare_int(self, parameter_one, parameter_two):
         if parameter_one == parameter_two:
-            return "Parameter one and two are the same"
+            print("Parameter one and two are the same")
         else:
             raise AssertionError("Compared values one - " + str(parameter_one) + " and parameter two " + str(parameter_two) + " are different\n")
+
+
+    def is_equal_none(self, parameter_name, expected_value, actual_value):
+        if expected_value == actual_value == None:
+            self.correct_message(parameter_name, expected_value, actual_value)
+        else:
+            self.incorrect_message(parameter_name, expected_value, actual_value)
 
 
 class ParseList():
@@ -378,5 +388,94 @@ class Converter():
         return (datetime.strptime(date, format) + timedelta(days=1)).strftime(format)
 
 
-d = Converter().utc_datetime()
-print(d)
+    def get_day_number(self, time_delta_day=None, time_delta_hour=None, time_delta_min=None):
+        daytime_now, daytime_val = datetime.now(), None
+        if time_delta_day:
+            daytime_val = daytime_now - timedelta(days=time_delta_day)
+        elif time_delta_hour:
+            daytime_val = daytime_now - timedelta(hours=time_delta_hour)
+        elif time_delta_min:
+            daytime_val = daytime_now - timedelta(minutes=time_delta_min)
+        return daytime_val.day
+
+
+class SaveFile():
+
+
+    def save_json_var_into_file(self, file_path, file_name, payload, file_ext=".json"):
+        """method for saving variable into json file. Method should be called in each update file method"""
+        with open(file_path + file_name + file_ext, 'w') as outfile:
+            json.dump(payload, outfile, indent=4)
+
+
+    def save_json_file_into_var(self, file_path, file_name):
+        """method for opening json file into variable. Method should be called to open file"""
+        with open(file_path + file_name + ".json", encoding="utf8") as json_data:
+            payload = json.load(json_data)
+        return payload
+
+
+    def open_txt_file(self, file_path, file_name, file_ext=".txt"):
+        """method for opening txt file into variable."""
+        with open(file_path + file_name + file_ext, encoding="utf8") as txt_data:
+            txt_info = txt_data.read()
+        return txt_info
+
+
+    def write_txt_file(self, file_path, file_name, data, file_ext=".txt"):
+        """method for open txt file into variable."""
+        with open(file_path + file_name + file_ext, mode='w', encoding="utf8") as txt_data:
+            txt_info = txt_data.write(str(data))
+        return txt_info
+
+
+class LogBrowserData():
+
+
+    def __init__(self, driver):
+        self.driver = driver
+
+
+    def make_dir(self, dir_path, dir_name):
+        pathlib.Path(dir_path + dir_name).mkdir(parents=True, exist_ok=True)
+
+
+    def gen_dir_name(self):
+        return str(datetime.now().strftime("%Y%m%d"))
+
+
+    def gen_file_name(self, extension=".png"):
+        return str(datetime.timestamp(datetime.now())) + extension
+
+
+    def attach_screen(self, file_name, file_path):
+        self.driver.save_screenshot(filename=file_path + file_name)
+        allure.attach(name=file_name, body=self.driver.get_screenshot_as_png(), attachment_type=AttachmentType.PNG)
+
+
+    def attach_json_log(self, file_name, file_path):
+        logs = self.driver.get_log('browser')
+        SaveFile().save_json_var_into_file(file_path=file_path, file_name=file_name, file_ext=".json", payload=logs)
+        allure.attach(name=file_name, body=str(logs).encode(), attachment_type=AttachmentType.TEXT)
+
+
+    def attach_trace_log(self, file_name, file_path):
+        logs = traceback.format_exc()
+        SaveFile().write_txt_file(file_path=file_path, file_name=file_name, file_ext=".txt", data=logs)
+        allure.attach(name=file_name, body=logs, attachment_type=AttachmentType.TEXT)
+
+
+    def log_and_save_info(self, class_name, test_name):
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) +\
+                    config.allure_report_path + class_name + "\\" + test_name + "\\"
+        try:
+            print(file_path)
+            os.makedirs(file_path)
+        except FileNotFoundError:
+            raise AssertionError("'" + file_path + "' doesn't exist\n")
+        except FileExistsError:
+            pass
+        self.attach_screen(file_name=self.gen_file_name(), file_path=file_path)
+        self.attach_trace_log(file_name=self.gen_file_name(extension=""), file_path=file_path)
+        self.attach_json_log(file_name=self.gen_file_name(extension=""), file_path=file_path)
+        raise Exception().with_traceback(sys.exc_info()[2])

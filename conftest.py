@@ -1,7 +1,7 @@
 import pytest, os
 from selenium import webdriver
 import config
-
+from src.general.general import LogBrowserData
 
 @pytest.fixture(scope="session")
 def chr_options(request):
@@ -23,15 +23,21 @@ def chr_options(request):
     chrome_options.add_argument("--disable-ipv6")
     chrome_options.add_argument("--allow-http-screen-capture")
     chrome_options.add_argument("--start-maximized")
-    # chrome_options.add_argument("--headless")
+    #chrome_options.add_argument("--headless")
     chrome_options.add_experimental_option(name="detach", value=True)
     return chrome_options
 
 
-@pytest.fixture(scope="session")
-def chr_driver(request, chr_options):
+@pytest.fixture(scope="module")
+def chr_driver(chr_options):
     driver = webdriver.Chrome(
             executable_path="D:\Repositories\TimeClockAutomation\src\exe\chromedriver.exe",
             options=chr_options, desired_capabilities={"loggingPrefs": {'browser': 'ALL'}})
     yield driver
     #driver.quit()
+
+
+
+@pytest.fixture(scope="module")
+def log_obj(chr_driver):
+    return LogBrowserData(driver=chr_driver)

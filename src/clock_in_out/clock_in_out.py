@@ -14,7 +14,13 @@ class ClockInOut(WebUI):
     locators = ClockInOutPageLocators()
     sql = ClockInOutSQL()
 
-    clock_in_out_location, clock_in_out_user, clock_in_out_note = None, None, None
+    clock_in_out_location, clock_in_out_user, clock_in_out_note, chosen_employees = None, None, None, None
+
+
+    def open_page_via_menu(self, page_name):
+        self.wait_button_and_click(button_locator=self.locators.menu_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_page_span[0], self.locators.menu_page_span[1].format(page_name)))
 
 
     def choose_location_to_clock_in(self, location=None, except_location=None):
@@ -23,7 +29,9 @@ class ClockInOut(WebUI):
         select_location_form = self.driver.find_elements(*self.locators.location_select_div)
         if len(select_location_form) > 0 and select_location_form[0].text.lower() != messages.select_location_label.lower():
             self.move_to_store_selection_win()
-        self.wait_button_and_click(button_locator=self.locators.react_select_div)
+        self.wait.wait_present_all_element_located(self.locators.react_select_div)
+        drop_down_lists = self.driver.find_elements(*self.locators.react_select_div)
+        self.wait_button_and_click(button=drop_down_lists[0])
         if location_name is None:
             location_name = ''
         locations = self.driver.find_elements(
@@ -41,13 +49,63 @@ class ClockInOut(WebUI):
         self.wait_button_and_click(button=location)
 
 
+
+    def choose_employee(self, employee=None, except_employee=None):
+        employee_el, employee_name = None, employee
+        self.wait_loader_disappear()
+        self.wait_button_and_click(button_locator=self.locators.employee_select_div)
+        if employee_name is None:
+            employee_name = ''
+        employees = self.driver.find_elements(
+            self.locators.react_select_option_div[0],
+            self.locators.react_select_option_div[1].format(employee_name))
+        if except_employee:
+            for i in employees:
+                if except_employee != i.text:
+                    employee = i
+                    break
+        else:
+            employee = random.choice(employees)
+        self.clock_in_out_user = employee.text
+        self.move_to_element(element=employee)
+        self.wait_button_and_click(button=employee)
+        self.chosen_employees = len(self.driver.find_elements(self.locators.react_multi_value_div[0],
+                                                              self.locators.react_multi_value_div[1].format("Employees")))
+
+
+    def set_date_val_in_filter(self, rec_request_day_from_diff=None, rec_request_day_to_diff=None):
+        conv = Converter()
+        self.wait_button_and_click(button_locator=self.locators.date_from_btn)
+        if rec_request_day_from_diff:
+            day_from = conv.get_day_number(time_delta_day=rec_request_day_from_diff)
+            self.wait_button_and_click(
+                button_locator=(self.locators.any_calendar_day_btn[0],
+                                self.locators.any_calendar_day_btn[1].format(day_from)))
+        else:
+            self.wait_button_and_click(button_locator=self.locators.current_calendar_day_btn)
+        self.wait_button_and_click(button_locator=self.locators.date_to_btn)
+        if rec_request_day_to_diff:
+            day_to = conv.get_day_number(time_delta_day=rec_request_day_to_diff)
+            self.wait_button_and_click(
+                button_locator=(self.locators.any_calendar_day_btn[0],
+                                self.locators.any_calendar_day_btn[1].format(day_to)))
+        else:
+            self.wait_button_and_click(button_locator=self.locators.current_calendar_day_btn)
+
+
+    def search_timesheet_rows(self):
+        self.wait_button_and_click(button_locator=self.locators.form_footer_submit_btn)
+
+
     def check_location_list_by_user(self, user_name, action_name, is_access):
         sql_obj = SQLGeneral()
-        self.wait_button_and_click(button_locator=self.locators.react_select_div)
+        self.wait.wait_present_all_element_located(self.locators.react_select_div)
+        drop_down_lists = self.driver.find_elements(*self.locators.react_select_div)
+        self.wait_button_and_click(button=drop_down_lists[0])
         signature = sql_obj.get_action_signature(action_name=action_name)[0]["signature"]
         locations_ui = self.driver.find_elements(*self.locators.react_select_option_list_div)
-        locations_db = SQLGeneral().get_user_perm_access_by_locations(user_name=user_name, signature=signature, is_access=is_access)
-        self.wait_button_and_click(button_locator=self.locators.react_select_div)
+        locations_db = self.sql.get_user_perm_access_by_locations(user_name=user_name, signature=signature, is_access=is_access)
+        self.wait_button_and_click(button=drop_down_lists[0])
         if len(locations_ui) == len(locations_db):
             print("Location list is correct according to user permissions\n")
         else:
@@ -76,7 +134,8 @@ class ClockInOut(WebUI):
 
     def choose_user_to_clock_in(self, user_full_name=None):
         user_el, user_name = None, user_full_name
-        self.wait_button_and_click(button_locator=self.locators.react_select_div)
+        drop_down_lists = self.driver.find_elements(*self.locators.react_select_div)
+        self.wait_button_and_click(button=drop_down_lists[-1])
         if user_name is None:
             user_name = ''
         users = self.driver.find_elements(
@@ -160,13 +219,13 @@ class ClockInOut(WebUI):
         self.check_and_close_popup_message()
 
 
-    def check_time_management_row_db(self, tm_type, tm_action):
+    def check_time_management_row_db(self, tm_type, tm_action, isremove=False):
         c, conv = Compare(), Converter()
         print(self.clock_in_out_location, self.clock_in_out_user)
         storeid = self.sql.get_locations(location_name=self.clock_in_out_location)[0]["ID"]
         userid = self.sql.get_users(full_name=self.clock_in_out_user)[0]["ID"]
         res_list_db = self.sql.get_time_managment_info_data_db(
-            method="get", param_dict={"storeid": storeid, "userid": userid, "type": tm_type}
+            method="get", param_dict={"storeid": storeid, "userid": userid, "type": tm_type, "isremove": isremove}
         )
         if tm_action == "clock in":
             c.compare_strings("Type", tm_type, res_list_db[0]["Type"])
@@ -182,6 +241,11 @@ class ClockInOut(WebUI):
             c.compare_strings("Type", tm_type, res_list_db[0]["Type"])
             c.compare_strings("LogOffDateTime", conv.utc_datetime()[0:16], res_list_db[0]["LogOffDateTime"][0:16])
             assert res_list_db[0]["parentid"] is not None
+        elif tm_action == "adjust_request_approve":
+            c.compare_strings("Type", tm_type, res_list_db[0]["Type"])
+            assert res_list_db[0]["LogOffDateTime"][0:16] is not None
+        elif tm_action == "decline_request_decline":
+            assert len(res_list_db) == 0
         try:
             if tm_action in ("clock in", "clock out"):
                 #c.compare_strings("Note", self.clock_in_out_note, res_list_db[0]["note"])
@@ -277,19 +341,23 @@ class ClockInOut(WebUI):
         time_val1, time_val2, break_time1, break_time2 = None, None, None, None
         if hours == "worked":
             time_val1 = self.driver.find_element(*self.locators.worked_hours_div).text
+            min1 = int(time_val1.split(":")[1])
             time.sleep(65)
             time_val2 = self.driver.find_element(*self.locators.worked_hours_div).text
-            c.compare_strings("Start Worked Hours", time_val1, "00:00")
-            c.compare_strings("Start Worked Hours", time_val2, "00:01")
+            min2 = int(time_val2.split(":")[1])
+            if min2 - min1 != 1:
+                raise AssertionError("Data in 'Hours Worked' is " + time_val1 + " and " + time_val2 + "\n")
             print("Data in 'Hours Worked' block is successfully updated\n")
         elif hours == "break":
             time_val1 = self.driver.find_element(*self.locators.worked_hours_div).text
             break_time1 = self.driver.find_element(*self.locators.break_hours_div).text
+            min1 = int(break_time1.split(":")[1])
             time.sleep(65)
             time_val2 = self.driver.find_element(*self.locators.worked_hours_div).text
             break_time2 = self.driver.find_element(*self.locators.break_hours_div).text
-            c.compare_strings("Start Break Time Hours", break_time1, "00:00")
-            c.compare_strings("End Break Time Hours", break_time2, "00:01")
+            min2 = int(break_time2.split(":")[1])
+            if min2 - min1 != 1:
+                raise AssertionError("Data in 'Hours Worked' is " + time_val1 + " and " + time_val2 + "\n")
             c.compare_strings("Start and End Worked Hours", time_val1, time_val2)
             print("Data in 'Break Time' block is successfully updated\n")
 
@@ -350,15 +418,16 @@ class ClockInOut(WebUI):
             login_date_time = conv.utc_datetime(time_delta_obj=timedelta(hours=counter + 1))
             logoff_date_time = conv.utc_datetime(time_delta_obj=timedelta(hours=counter + 0.5))
             counter += 0.5
-            tm_api.post_time_managment_row(
+            tm_api.post_time_management_row(
                 is_remove=False, user_id=user_id, user_name=user_name, user_email=r.random_email(), store_id=i["LocationId"],
                 time_manage_type="ClockInOut", note=r.random_str(), login_date_time=login_date_time,
                 logoff_date_time=logoff_date_time, is_force_clock_out=1, parent_id=None, state="Added")
 
 
-    def order_time_sheet_columns(self):
-        columns = ["Location", "Date", "Duration"]
-        for i in columns:
+    def order_table_columns(self, page):
+        columns = {"Dashboard": ["Location", "Date", "Duration"],
+                   "Adjustment Requests": ["Date", "Type", "Status", "Clock In", "Clock Out", "Duration"]}
+        for i in columns[page]:
             locator = [self.locators.column_headers_div[0], self.locators.column_headers_div[1].format(i)]
             if i == "Duration":
                 locator[1] += "/.."
@@ -426,3 +495,17 @@ class ClockInOut(WebUI):
             print("The pages are changing when past a new page value\n")
         else:
             raise AssertionError("The pages aren't changing when past a new page value\n")
+
+
+    def check_duration_hint_board(self):
+        duration_tooltip1 = self.driver.find_element(*self.locators.duration_tooltip_div)
+        duration_tooltip_class1 = duration_tooltip1.get_attribute("class")
+        if "dark" not in duration_tooltip_class1:
+            raise AssertionError("Duration tooltip is shown when shouldn't be\n")
+        self.hover_element(locator=self.locators.duration_hint_span)
+        duration_tooltip2 = self.driver.find_element(*self.locators.duration_tooltip_div)
+        duration_tooltip_class2 = duration_tooltip2.get_attribute("class")
+        if "show" not in duration_tooltip_class2:
+            raise AssertionError("Duration tooltip isn't shown but should be\n")
+        if duration_tooltip2.text != "Displayed only worked hours":
+            raise AssertionError("Duration tooltip text is incorrect: " + duration_tooltip2.text)
