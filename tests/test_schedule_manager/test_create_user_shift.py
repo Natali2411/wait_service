@@ -6,8 +6,8 @@ from src.general.permissions import Permission
 import config, pytest, os
 
 #@pytest.mark.skip
-class TestScheduleOpenShift():
-    """Test-case CRT-1375"""
+class TestScheduleUserShift():
+    """Test-case CRT-1376"""
 
     @pytest.fixture(scope="module")
     def login_obj(self, chr_driver):
@@ -88,10 +88,10 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
-    def test_crt_open_shift_on_week_view(self, log_obj, schedule_obj):
+    def test_crt_user_shift_on_week_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Week")
-            schedule_obj.create_shift(view="Week", break_time=True, day_num=2, rec_request_min_diff=10)
+            schedule_obj.create_shift(view="Week", break_time=True, day_num=9, rec_request_min_diff=10)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -99,10 +99,10 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
-    def test_crt_open_shift_w_duration_on_week_view(self, log_obj, schedule_obj):
+    def test_crt_user_shift_w_duration_on_week_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Week")
-            schedule_obj.create_shift(view="Week", break_duration=True, day_num=3)
+            schedule_obj.create_shift(view="Week", break_duration=True, day_num=11)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -130,9 +130,9 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
-    def test_copy_and_past_open_shift_on_week_view(self, log_obj, schedule_obj):
+    def test_copy_and_past_user_shift_on_week_view(self, log_obj, schedule_obj):
         try:
-            schedule_obj.copy_and_past_shifts(day_num=4)
+            schedule_obj.copy_and_past_shifts(day_num=13)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -159,7 +159,7 @@ class TestScheduleOpenShift():
             log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
 
     #@pytest.mark.skip
-    def test_delete_open_shifts_on_week_view(self, log_obj, schedule_obj):
+    def test_delete_shifts_on_week_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.delete_shifts()
         except:
@@ -172,6 +172,7 @@ class TestScheduleOpenShift():
     def test_open_month_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Month")
+            schedule_obj.open_today_view(view="Month")
             schedule_obj.check_view_opened(view="Month", is_selected=True)
             schedule_obj.change_schedule_date(view="Month", direction="left", num=1)
         except:
@@ -184,7 +185,7 @@ class TestScheduleOpenShift():
     def test_crt_open_shift_on_month_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Month")
-            schedule_obj.create_shift(view="Month", break_time=True, day_num=5, rec_request_min_diff=10)
+            schedule_obj.create_shift(view="Month", break_time=True, day_num=33, rec_request_min_diff=10)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -195,11 +196,12 @@ class TestScheduleOpenShift():
     def test_crt_open_shift_w_duration_on_month_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Month")
-            schedule_obj.create_shift(view="Month", break_duration=True, day_num=6)
+            schedule_obj.create_shift(view="Month", break_duration=True, day_num=35)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
             log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
+
 
     #@pytest.mark.skip
     def test_shifts_created_on_month_view(self, log_obj, schedule_obj):
@@ -222,9 +224,20 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
+    def test_delete_shifts_on_month_view(self, log_obj, schedule_obj):
+        try:
+            schedule_obj.delete_shifts()
+        except:
+            current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
+            class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
+            log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
+
+
+    #@pytest.mark.skip
     def test_open_day_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Day")
+            schedule_obj.open_today_view(view="Day")
             schedule_obj.check_view_opened(view="Day", is_selected=True)
             schedule_obj.change_schedule_date(view="Day", direction="left", num=1)
         except:
@@ -234,10 +247,10 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
-    def test_crt_open_shift_on_day_view(self, log_obj, schedule_obj):
+    def test_crt_shift_on_day_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Day")
-            schedule_obj.create_shift(view="Day", break_time=True, day_hour=5, rec_request_min_diff=5)
+            schedule_obj.create_shift(view="Day", break_time=True, day_hour=60, rec_request_min_diff=5)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -245,10 +258,10 @@ class TestScheduleOpenShift():
 
 
     #@pytest.mark.skip
-    def test_crt_open_shift_w_duration_on_day_view(self, log_obj, schedule_obj):
+    def test_crt_shift_w_duration_on_day_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.open_schedule_view(view="Day")
-            schedule_obj.create_shift(view="Day", break_duration=True, day_hour=6)
+            schedule_obj.create_shift(view="Day", break_duration=True, day_hour=63)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
@@ -268,6 +281,16 @@ class TestScheduleOpenShift():
     def test_edit_shifts_on_day_view(self, log_obj, schedule_obj):
         try:
             schedule_obj.edit_shifts(rec_request_min_diff=15)
+        except:
+            current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
+            class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
+            log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
+
+
+    #@pytest.mark.skip
+    def test_delete_shifts_on_day_view(self, log_obj, schedule_obj):
+        try:
+            schedule_obj.delete_shifts()
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
             class_name, test_name = current_test[1], current_test[-1].split(' ')[0]

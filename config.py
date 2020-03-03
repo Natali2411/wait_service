@@ -39,6 +39,7 @@ env = {
 """
 users_time_managment_api = "user/api/timeManagement"
 users_time_adjust_api = "user/api/TimeManagement/adjustments/"
+users_schedule_api = "user/api/schedule/shifts/"
 # log configs
 allure_report_path = "\logs\\"
 

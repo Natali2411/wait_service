@@ -13,7 +13,7 @@ from src.general.api import TimeManageAPI
 import random, time, re, calendar
 from datetime import timedelta, datetime, date
 from selenium.webdriver.common.keys import Keys
-from src.adjust_request.adjust_request import AdjustRequest
+from src.general.api import TimeManageAPI
 
 
 class ScheduleManager(ClockInOut):
@@ -175,8 +175,7 @@ class ScheduleManager(ClockInOut):
             self.wait_button_and_click(button_locator=self.locators.mui_ok_btn)
 
 
-    def open_new_open_shift_win(self, view, day_num, day_hour):
-        #column_headers = self.driver.find_elements(*self.locators.column_header_th)
+    def open_new_shift_win(self, view, day_num, day_hour):
         shift_td = self.driver.find_elements(*self.locators.shift_td)
         if view in ("Week", "Month"):
             self.wait_button_and_click(button=shift_td[int(day_num)-1])
@@ -256,9 +255,9 @@ class ScheduleManager(ClockInOut):
         actions.click_and_hold(slider).move_to_element(to_element=slider_item).release().perform()
 
 
-    def create_open_shift(self, view, break_time=None, break_duration=None, day_num=None,
+    def create_shift(self, view, break_time=None, break_duration=None, day_num=None,
                           day_hour=None, rec_request_min_diff=None):
-        self.open_new_open_shift_win(view=view, day_num=day_num, day_hour=day_hour)
+        self.open_new_shift_win(view=view, day_num=day_num, day_hour=day_hour)
         self.choose_location_for_shift()
         if break_time:
             self.wait_button_and_click(
@@ -275,7 +274,7 @@ class ScheduleManager(ClockInOut):
         )
 
 
-    def check_open_shifts(self, status, items_num):
+    def check_shifts(self, status, items_num):
         c, shift_items = Compare(), None
         if status == "Draft":
             shift_items = self.driver.find_elements(*self.locators.draft_shift_contex_menu_btn)
@@ -284,7 +283,7 @@ class ScheduleManager(ClockInOut):
         c.compare_int(len(shift_items), items_num)
 
 
-    def edit_open_shifts(self, rec_request_min_diff):
+    def edit_shifts(self, rec_request_min_diff):
         contex_menu_btns = self.driver.find_elements(*self.locators.contex_menu_btn)
         for i in range(len(contex_menu_btns)):
             try:
@@ -308,7 +307,7 @@ class ScheduleManager(ClockInOut):
                 button_locator=(self.locators.text_attr_btn[0], self.locators.text_attr_btn[1].format("Update"))
             )
 
-    def copy_and_past_open_shifts(self, day_num):
+    def copy_and_past_shifts(self, day_num):
         c = Compare()
         contex_menu_btns1 = self.driver.find_elements(*self.locators.contex_menu_btn)
         items_len1 = len(contex_menu_btns1)
@@ -384,3 +383,77 @@ class ScheduleManager(ClockInOut):
             time.sleep(1.5)
             contex_menu_btns = self.driver.find_elements(*self.locators.contex_menu_btn)
             shift_len = len(contex_menu_btns)
+
+
+    def create_shift_rows_api(self, user_name, action_name, is_access, is_published, start_hours_add, end_hours_add, duration):
+        tm_api_obj, conv = TimeManageAPI(), Converter()
+        user_id = self.sql.get_users(user_name=user_name)[0]["ID"]
+        signature = self.sql.get_action_signature(action_name=action_name)[0]["signature"]
+        locations_db = self.sql.get_user_perm_access_by_locations(
+            user_name=user_name, signature=signature, is_access=is_access)
+        store_id = random.choice(locations_db)["LocationId"]
+        shift_start = conv.current_date_in_format(hours_add=start_hours_add)
+        shift_end = conv.current_date_in_format(hours_add=end_hours_add)
+        tm_api_obj.post_schedule_shift_api(user_id=user_id, location_id=store_id, is_published=is_published,
+                                           shift_start=shift_start, shift_end=shift_end, duration=duration)
+
+
+    def publish_all_shifts(self):
+        c = Compare()
+        published_shift_items = self.driver.find_elements(*self.locators.published_shift_contex_menu_btn)
+        draft_shift_items = self.driver.find_elements(*self.locators.draft_shift_contex_menu_btn)
+        if draft_shift_items:
+            actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                                   self.locators.filter_btn[1].format("Actions"))
+            self.wait_button_and_click(button=actions_btn)
+            self.wait_button_and_click(button_locator=(self.locators.menu_items_li[0],
+                                                       self.locators.menu_items_li[1] + "//span[text()='Publish All']"))
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_yes_btn)
+        contex_menu_btn = self.driver.find_elements(*self.locators.contex_menu_btn)
+        c.compare_int(len(contex_menu_btn), len(published_shift_items) + len(draft_shift_items))
+
+
+    def clear_schedule_shifts(self):
+        c = Compare()
+        published_shift_items1 = self.driver.find_elements(*self.locators.published_shift_contex_menu_btn)
+        draft_shift_items1 = self.driver.find_elements(*self.locators.draft_shift_contex_menu_btn)
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        if draft_shift_items1:
+            self.wait_button_and_click(button_locator=(self.locators.menu_items_li[0],
+                                                       self.locators.menu_items_li[1] + "//span[text()='Clear Schedule']"))
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_yes_btn)
+            draft_shift_items2 = self.driver.find_elements(*self.locators.draft_shift_contex_menu_btn)
+            c.compare_int(0, len(draft_shift_items2))
+        else:
+            clear_btn = self.driver.find_element(
+                self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Clear Schedule"))
+            opacity = clear_btn.value_of_css_property("opacity")
+            c.compare_strings("Item visibility", "0.5", opacity)
+            self.send_esc_key()
+        published_shift_items2 = self.driver.find_elements(*self.locators.published_shift_contex_menu_btn)
+        c.compare_int(len(published_shift_items1), len(published_shift_items2))
+
+
+    def check_no_draft_shifts(self):
+        draft_shift_items = self.driver.find_elements(*self.locators.draft_shift_contex_menu_btn)
+        Compare().compare_int(0, len(draft_shift_items))
+
+
+    def open_fullscreen_mode(self):
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Fullscreen mode"))
+        )
+
+
+    def close_fullscreen_mode(self):
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Exit Fullscreen mode"))
+        )

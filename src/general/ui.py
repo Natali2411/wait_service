@@ -30,6 +30,10 @@ class WebUI():
         return ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
 
 
+    def send_f11(self):
+        return ActionChains(self.driver).send_keys(Keys.F11).perform()
+
+
     def send_data_to_field(self, element=None, data=None, locator=None):
         if locator:
             self.wait.wait_present_element_located(locator)
@@ -67,6 +71,15 @@ class WebUI():
         except WebDriverException:
             self.driver.execute_script("arguments[0].click();", button)
         self.wait_loader_disappear()
+
+
+    def get_css_property_val(self, property_name, element=None, locator=None):
+        element = element or self.driver.find_element(*locator)
+        js = "var style = getComputedStyle(arguments[0]) " \
+             "var property = style.{0} " \
+             "var res = console.log(property)".format(property_name)
+        res = self.driver.execute_script(js, element)
+        return res
 
 
     def check_modal_error_appear(self):

@@ -25,6 +25,7 @@ def chr_options(request):
     chrome_options.add_argument("--start-maximized")
     #chrome_options.add_argument("--headless")
     chrome_options.add_experimental_option(name="detach", value=True)
+    #chrome_options.add_experimental_option("mobileEmulation", {"deviceName": "Nexus 5"})
     return chrome_options
 
 
@@ -34,7 +35,7 @@ def chr_driver(chr_options):
             executable_path="D:\Repositories\TimeClockAutomation\src\exe\chromedriver.exe",
             options=chr_options, desired_capabilities={"loggingPrefs": {'browser': 'ALL'}})
     yield driver
-    #driver.quit()
+    driver.quit()
 
 
 

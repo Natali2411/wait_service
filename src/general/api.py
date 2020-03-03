@@ -111,8 +111,17 @@ class TimeManageAPI():
         if r.status_code not in (200, 204):
             raise AssertionError(r.status_code, r.reason, r.content)
         else:
-            if len(r.json()) == 0:
-                res = ["empty_list"]
-            else:
-                res = r.json()
-            return res
+            return r.json()
+
+
+    def post_schedule_shift_api(self, shift_start, shift_end, user_id, location_id, is_published, duration):
+        """POST /api/schedule/shifts"""
+        url = config.env["api_base_url"] + config.users_schedule_api
+        data = {'start': shift_start, 'end': shift_end, 'userId': user_id,
+                'locationId': location_id, 'isPublished': is_published, 'title': '4w7Shk', 'color': None,
+                'breaks': [{'duration': duration}]}
+        r = requests.post(url=url, headers=self.user_api_headers(), data=json.dumps(data))
+        if r.status_code not in (200, 204):
+            raise AssertionError(r.status_code, r.reason, r.content)
+        else:
+            return r.json()

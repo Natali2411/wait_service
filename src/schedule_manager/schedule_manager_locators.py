@@ -11,6 +11,7 @@ class ScheduleManagerPageLocators(BasePageLocators):
     user_schedule_td = (By.XPATH, "//td[@data-resource-id]")
     arrow_i = (By.XPATH, "//i[@class='anticon anticon-{0} icon-nav']")
     menu_items_li = (By.XPATH, "//li[@role='menuitem']")
+    menu_item_li = (By.XPATH, "//span[text()='{0}']/../..")
     calendar_btn = (By.XPATH, "//*[@class='right-header']/button[1]")
     calendar_view_div = (By.XPATH, "//*[@class='MuiPickersBasePicker-pickerView']/../../..")
     column_header_th = (By.XPATH, "//*[@class='scheduler-bg-table']//th")
