@@ -173,6 +173,7 @@ class TestScheduleOpenShift():
         try:
             schedule_obj.open_schedule_view(view="Month")
             schedule_obj.check_view_opened(view="Month", is_selected=True)
+            schedule_obj.open_today_view(view="Month")
             schedule_obj.change_schedule_date(view="Month", direction="left", num=1)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
@@ -226,6 +227,7 @@ class TestScheduleOpenShift():
         try:
             schedule_obj.open_schedule_view(view="Day")
             schedule_obj.check_view_opened(view="Day", is_selected=True)
+            schedule_obj.open_today_view(view="Day")
             schedule_obj.change_schedule_date(view="Day", direction="left", num=1)
         except:
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')

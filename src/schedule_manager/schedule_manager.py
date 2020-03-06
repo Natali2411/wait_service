@@ -205,6 +205,8 @@ class ScheduleManager(ClockInOut):
         a.perform()
         # set minute value
         minute_val += int(rec_request_min_diff)
+        if minute_val < 10:
+            minute_val = "0" + str(minute_val)
         self.wait_button_and_click(button=minute_btn)
         try:
             time_point = self.driver.find_element(self.locators.time_point[0],
@@ -306,6 +308,7 @@ class ScheduleManager(ClockInOut):
             self.wait_button_and_click(
                 button_locator=(self.locators.text_attr_btn[0], self.locators.text_attr_btn[1].format("Update"))
             )
+            time.sleep(2)
 
     def copy_and_past_shifts(self, day_num):
         c = Compare()
