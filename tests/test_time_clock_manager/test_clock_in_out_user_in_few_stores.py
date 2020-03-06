@@ -131,7 +131,7 @@ class TestClockInOutInFewStores():
             log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
 
 
-    def test_tear_down(self, log_obj, login_obj): 
+    def test_tear_down(self, log_obj, login_obj):
         try:
             login_obj.logout()
             login_obj.clear_storages()
