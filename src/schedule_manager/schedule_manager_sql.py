@@ -49,3 +49,20 @@ class ScheduleManagerSQL(SQLGeneral):
                 cursor.execute(i)
                 cursor.commit()
         return True
+
+
+    def get_template_info(self):
+        db = pyodbc.connect(self.db_connection(config.emp_manage_database))
+        cursor = db.cursor()
+        sql_string = "select t.id, t.TemplateName, t.startDate, t.endDate, t.expireDate, t.accessCode, " \
+                     "t.createdTS, t.createdUser from Templates t where t.AccessCode = {0}"
+        cursor.execute(sql_string.format(config.access_code))
+        res_db = cursor.fetchall()
+        if len(res_db) > 0:
+            columns = [column[0] for column in cursor.description]
+            results = []
+            for row in res_db:
+                results.append(dict(zip(columns, row)))
+            return results
+        else:
+            return []

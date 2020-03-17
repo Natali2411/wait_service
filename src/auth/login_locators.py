@@ -9,6 +9,7 @@ class LoginPageLocators(BasePageLocators):
     access_code = (By.XPATH, "//input[@id='companyId']")
     user_name = (By.XPATH, "//*[@id='username']")
     user_password = (By.XPATH, "//*[@id='password']")
+    continue_btn = (By.XPATH, ".//*[@id='btnSubmit'][text()='Continue']")
     login_btn = (By.XPATH, ".//*[@id='btnSubmit']")
     login_time_clock_btn = (By.XPATH, "//button[@value='login']")
     menu_btn = (By.XPATH, "//button[@class='header__btn-nav']")

@@ -46,3 +46,5 @@ class BasePageLocators():
 
     modal_footer_yes_btn = (By.XPATH, "//div[@class='modal-content__footer ']/button[text()='Yes']")
     modal_footer_cancel_btn = (By.XPATH, "//div[@class='modal-content__footer ']/button[text()='Cancel']")
+    modal_footer_delete_btn = (By.XPATH, "//div[@class='modal-content__footer ']/button[text()='Delete']")
+    modal_footer_ok_btn = (By.XPATH, "//div[@class='modal-content__footer ']/button[text()='OK']")

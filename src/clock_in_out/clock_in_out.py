@@ -339,24 +339,26 @@ class ClockInOut(WebUI):
     def check_time_box_week_values(self, hours):
         c = Compare()
         time_val1, time_val2, break_time1, break_time2 = None, None, None, None
+        timer = self.driver.find_element(*self.locators.timer_div).text
+        sec = int(timer.split()[0][-2:])
         if hours == "worked":
             time_val1 = self.driver.find_element(*self.locators.worked_hours_div).text
             min1 = int(time_val1.split(":")[1])
-            time.sleep(65)
+            time.sleep(70)
             time_val2 = self.driver.find_element(*self.locators.worked_hours_div).text
             min2 = int(time_val2.split(":")[1])
-            if min2 - min1 != 1:
+            if min2 - min1 == 0:
                 raise AssertionError("Data in 'Hours Worked' is " + time_val1 + " and " + time_val2 + "\n")
             print("Data in 'Hours Worked' block is successfully updated\n")
         elif hours == "break":
             time_val1 = self.driver.find_element(*self.locators.worked_hours_div).text
             break_time1 = self.driver.find_element(*self.locators.break_hours_div).text
             min1 = int(break_time1.split(":")[1])
-            time.sleep(65)
+            time.sleep(70)
             time_val2 = self.driver.find_element(*self.locators.worked_hours_div).text
             break_time2 = self.driver.find_element(*self.locators.break_hours_div).text
             min2 = int(break_time2.split(":")[1])
-            if min2 - min1 != 1:
+            if min2 - min1 == 0:
                 raise AssertionError("Data in 'Hours Worked' is " + time_val1 + " and " + time_val2 + "\n")
             c.compare_strings("Start and End Worked Hours", time_val1, time_val2)
             print("Data in 'Break Time' block is successfully updated\n")

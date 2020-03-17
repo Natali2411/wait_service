@@ -16,6 +16,9 @@ class Login(WebUI):
             self.reload_page()
         try:
             self.send_data_to_field(locator=self.locators.access_code, data=access_code)
+            continue_btn = self.driver.find_elements(*self.locators.continue_btn)
+            if len(continue_btn) > 0:
+                self.wait_button_and_click(button_locator=self.locators.continue_btn)
             self.send_data_to_field(locator=self.locators.user_name, data=user_name)
             self.send_data_to_field(locator=self.locators.user_password, data=password)
             self.driver.find_element(*self.locators.login_btn).click()

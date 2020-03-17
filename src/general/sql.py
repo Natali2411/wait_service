@@ -168,3 +168,27 @@ class SQLGeneral():
             return session
         except:
             return "Session ID wasn't found"
+
+
+    def change_user_active_status(self, user_name, status):
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        sql_string = "update SYS_users set Active = {0} where username = '{1}'"
+        cursor.execute(sql_string.format(status, user_name))
+        cursor.commit()
+
+
+    def change_store_active_status(self, status, store_id=None):
+        db = pyodbc.connect(self.db_connection(config.database))
+        cursor = db.cursor()
+        sql_string = "update Location set Active = {0} "
+        if store_id:
+            sql_string += " where id = {1} "
+            cursor.execute(sql_string.format(status, store_id))
+            cursor.commit()
+        else:
+            try:
+                cursor.execute(sql_string.format(status))
+                cursor.commit()
+            except:
+                pass

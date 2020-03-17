@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from src.general.base_locators import BasePageLocators
 from selenium.webdriver.common.by import By
+import time
 
 class WebUI():
 
@@ -71,6 +72,7 @@ class WebUI():
         except WebDriverException:
             self.driver.execute_script("arguments[0].click();", button)
         self.wait_loader_disappear()
+        time.sleep(1.5)
 
 
     def get_css_property_val(self, property_name, element=None, locator=None):

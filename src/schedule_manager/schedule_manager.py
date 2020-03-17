@@ -20,6 +20,7 @@ class ScheduleManager(ClockInOut):
 
     locators = ScheduleManagerPageLocators()
     sql = ScheduleManagerSQL()
+    shift_location_id = None
 
 
     def apply_schedule_filter(self, action):
@@ -123,7 +124,7 @@ class ScheduleManager(ClockInOut):
             self.wait_button_and_click(button=view_label)
 
 
-    def change_schedule_date(self, view, direction, num):
+    def change_schedule_date(self, view, direction, num, to_verify_header=True):
         c, header_exp = Compare(), None
         arrow = self.driver.find_element(self.locators.arrow_i[0], self.locators.arrow_i[1].format(direction))
         for i in range(int(num)):
@@ -145,7 +146,8 @@ class ScheduleManager(ClockInOut):
                 if direction == "left":
                     days_to_add = -(i + 1) * 30
                 header_exp = self.gen_month_view_header(days_to_add=days_to_add)
-            c.compare_strings(parameter_name="Schedule view header", expected_value=header_exp, actual_value=header_ui)
+            if to_verify_header:
+                c.compare_strings(parameter_name="Schedule view header", expected_value=header_exp, actual_value=header_ui)
 
 
     def open_today_view(self, view):
@@ -249,12 +251,18 @@ class ScheduleManager(ClockInOut):
         self.wait_button_and_click(button=location)
 
 
-    def move_duration_slider(self, duration="30m"):
-        slider = self.driver.find_element(*self.locators.break_duration_slider_span)
+    def move_slider(self, to_pointer):
+        slider = self.driver.find_element(*self.locators.slider_span)
         slider_item = self.driver.find_element(
-            self.locators.slider_line_items[0], self.locators.slider_line_items[1].format(duration))
+            self.locators.slider_line_items[0], self.locators.slider_line_items[1].format(to_pointer))
         actions = ActionChains(self.driver)
         actions.click_and_hold(slider).move_to_element(to_element=slider_item).release().perform()
+
+
+    def move_slider_by_offset(self, to_pointer):
+        slider = self.driver.find_element(*self.locators.slider_span)
+        actions = ActionChains(self.driver)
+        actions.click_and_hold(slider).move_by_offset(to_pointer, 0).release().perform()
 
 
     def create_shift(self, view, break_time=None, break_duration=None, day_num=None,
@@ -270,7 +278,7 @@ class ScheduleManager(ClockInOut):
             self.wait_button_and_click(
                 button_locator=(self.locators.add_time_break_btn[0], self.locators.add_time_break_btn[1].format("Duration"))
             )
-            self.move_duration_slider()
+            self.move_slider(to_pointer="'30m'")
         self.wait_button_and_click(
             button_locator=(self.locators.text_attr_btn[0], self.locators.text_attr_btn[1].format("Create"))
         )
@@ -283,6 +291,14 @@ class ScheduleManager(ClockInOut):
         elif status == "Published":
             shift_items = self.driver.find_elements(*self.locators.published_shift_contex_menu_btn)
         c.compare_int(len(shift_items), items_num)
+
+
+    def check_applied_shifts(self, view, shift_type, shift_num):
+        c, shift_items = Compare(), None
+        cols_in_row = {"Week": 7, "Day": 48, "Month": 31}
+        if shift_type.lower() == "open":
+            shift_items = self.driver.find_elements(*self.locators.contex_menu_btn)[:cols_in_row[view] + 1]
+        c.compare_int(len(shift_items), shift_num)
 
 
     def edit_shifts(self, rec_request_min_diff):
@@ -304,7 +320,7 @@ class ScheduleManager(ClockInOut):
             if len(add_break_time_btn) > 0:
                 self.set_shift_break_time_fields(rec_request_min_diff=rec_request_min_diff)
             else:
-                self.move_duration_slider(duration="45m")
+                self.move_slider(to_pointer="'45m'")
             self.wait_button_and_click(
                 button_locator=(self.locators.text_attr_btn[0], self.locators.text_attr_btn[1].format("Update"))
             )
@@ -388,13 +404,16 @@ class ScheduleManager(ClockInOut):
             shift_len = len(contex_menu_btns)
 
 
-    def create_shift_rows_api(self, user_name, action_name, is_access, is_published, start_hours_add, end_hours_add, duration):
+    def create_shift_rows_api(self, user_name, action_name, is_access, is_published, start_hours_add, end_hours_add,
+                              duration, child_action_name="Manager"):
         tm_api_obj, conv = TimeManageAPI(), Converter()
         user_id = self.sql.get_users(user_name=user_name)[0]["ID"]
-        signature = self.sql.get_action_signature(action_name=action_name)[0]["signature"]
+        #signature = self.sql.get_action_signature(action_name=action_name)[0]["signature"]
+        signature = self.sql.get_child_action_signature(action_name=action_name, child_action_name=child_action_name)[0][
+            "signature"]
         locations_db = self.sql.get_user_perm_access_by_locations(
             user_name=user_name, signature=signature, is_access=is_access)
-        store_id = random.choice(locations_db)["LocationId"]
+        self.shift_location_id = store_id = random.choice(locations_db)["LocationId"]
         shift_start = conv.current_date_in_format(hours_add=start_hours_add)
         shift_end = conv.current_date_in_format(hours_add=end_hours_add)
         tm_api_obj.post_schedule_shift_api(user_id=user_id, location_id=store_id, is_published=is_published,
@@ -460,3 +479,160 @@ class ScheduleManager(ClockInOut):
         self.wait_button_and_click(
             button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Exit Fullscreen mode"))
         )
+
+
+    def open_crt_temp_form(self):
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Save as Template"))
+        )
+
+
+    def create_template(self, view, shifts_num):
+        c = Compare()
+        self.open_crt_temp_form()
+        self.send_data_to_field(locator=self.locators.template_name_input, data="test_" + view.lower())
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        included_shifts = self.driver.find_element(*self.locators.included_shifts_p).text
+        c.compare_strings(parameter_name="Included shifts to template", actual_value=included_shifts,
+                          expected_value=str(shifts_num) + " shift(s) selected for template.")
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        self.wait_button_and_click(button_locator=(
+            self.locators.filter_btn[0], self.locators.filter_btn[1].format("Create Template"))
+        )
+        self.check_and_close_popup_message()
+
+
+    def select_shifts_to_template(self, direction):
+        include_in_temp_spans = self.driver.find_elements(
+            self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include in template")
+        )
+        if direction == "left":
+            include_in_temp_spans = list(reversed(include_in_temp_spans))
+        included_shifts_len = len(include_in_temp_spans)
+        for i in range(included_shifts_len):
+            self.wait_button_and_click(button=include_in_temp_spans[i])
+            if i < included_shifts_len - 1:
+                if direction == "right":
+                    self.wait_button_and_click(button_locator=self.locators.shift_next_btn)
+                elif direction == "left":
+                    self.wait_button_and_click(button_locator=self.locators.shift_back_btn)
+
+
+    def edit_template_info(self, is_save_changes):
+        # edit template name
+        self.wait_button_and_click(button_locator=(
+            self.locators.template_edit_info_btn[0], self.locators.template_edit_info_btn[1].format("Template Name:"))
+        )
+        self.send_data_to_field(locator=self.locators.template_name_input, data=Randomizer().random_str())
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        # edit included shifts to template
+        self.wait_button_and_click(button_locator=(
+            self.locators.template_edit_info_btn[0], self.locators.template_edit_info_btn[1].format("Shifts:"))
+        )
+        self.select_shifts_to_template(direction="right")
+        self.select_shifts_to_template(direction="left")
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        # edit employees included
+        self.wait_button_and_click(button_locator=(
+            self.locators.template_edit_info_btn[0], self.locators.template_edit_info_btn[1].format("Employees Included:"))
+        )
+        self.wait_button_and_click(button_locator=(
+            self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include Employees"))
+        )
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        # edit draft shift included
+        self.wait_button_and_click(button_locator=(
+            self.locators.template_edit_info_btn[0], self.locators.template_edit_info_btn[1].format("Draft Shifts Included:"))
+        )
+        self.wait_button_and_click(button_locator=(
+            self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include Draft Shifts"))
+        )
+        self.wait_button_and_click(button_locator=(
+            self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include Draft Shifts"))
+        )
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        if is_save_changes:
+            self.wait_button_and_click(button_locator=(
+                self.locators.filter_btn[0], self.locators.filter_btn[1].format("Create Template"))
+            )
+        else:
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_cancel_btn)
+
+
+    def check_crt_new_template_form(self, is_save_changes):
+        self.open_crt_temp_form()
+        self.send_data_to_field(locator=self.locators.template_name_input, data=Randomizer().random_str())
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        def select_check_box(direction):
+            self.select_shifts_to_template(direction=direction)
+            self.wait_button_and_click(button_locator=(
+                self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include Employees"))
+            )
+            self.wait_button_and_click(button_locator=(
+                self.locators.check_box_span[0], self.locators.check_box_span[1].format("Include Draft Shifts"))
+            )
+        select_check_box(direction="right")
+        select_check_box(direction="left")
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        self.edit_template_info(is_save_changes=is_save_changes)
+
+
+    def apply_template(self, period_num, direction, include_current_period, no_templates=None):
+        c = Compare()
+        if not include_current_period:
+            arrow = self.driver.find_element(self.locators.arrow_i[0], self.locators.arrow_i[1].format(direction))
+            self.wait_button_and_click(button=arrow)
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Apply Template"))
+        )
+        if no_templates:
+            popup_save_message = self.driver.find_elements(*self.base_locators.popup_message)
+            if len(popup_save_message) > 0:
+                c.compare_str_in_str(searched_val="There are no any templates yet!".lower(),
+                                     in_str_val=popup_save_message[0].text.lower())
+                templates = self.sql.get_template_info()
+                c.compare_int(0, len(templates))
+                return True
+        self.wait_button_and_click(button_locator=self.locators.select_template_div)
+        template = random.choice(self.driver.find_elements(*self.locators.template_li))
+        self.wait_button_and_click(button=template)
+        self.move_slider_by_offset(to_pointer=period_num)
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        self.wait_button_and_click(button_locator=self.locators.next_btn_span)
+        self.wait_button_and_click(button_locator=(
+            self.locators.filter_btn[0], self.locators.filter_btn[1].format("Apply Template"))
+        )
+        if include_current_period:
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_ok_btn)
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_cancel_btn)
+        self.check_and_close_popup_message()
+
+
+    def delete_template(self, no_template=None):
+        c = Compare()
+        actions_btn = self.driver.find_element(self.locators.filter_btn[0],
+                                               self.locators.filter_btn[1].format("Actions"))
+        self.wait_button_and_click(button=actions_btn)
+        self.wait_button_and_click(
+            button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Delete Template"))
+        )
+        if no_template:
+            popup_save_message = self.driver.find_elements(*self.base_locators.popup_message)
+            if len(popup_save_message) > 0:
+                c.compare_str_in_str(searched_val="There are no any templates yet!".lower(),
+                                        in_str_val=popup_save_message[0].text.lower())
+                templates = self.sql.get_template_info()
+                c.compare_int(0, len(templates))
+        else:
+            self.wait_button_and_click(button_locator=self.locators.select_template_div)
+            template = random.choice(self.driver.find_elements(*self.locators.template_li))
+            self.wait_button_and_click(button=template)
+            self.wait_button_and_click(button_locator=self.locators.modal_footer_delete_btn)
+            self.check_and_close_popup_message()

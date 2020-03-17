@@ -19,9 +19,9 @@ class ScheduleManagerPageLocators(BasePageLocators):
     shift_paste_svg = (By.XPATH, "//div[@class='event-container']//td/*[@class='button-paste']")
     time_break_btn = (By.XPATH, "//div[@class='modal-content__body']//*[@class='shift-form-breaks']//input[@name='{0}']/..//button")
     add_time_break_btn = (By.XPATH, "//span[text()='+ Add Break {0}']/..")
-    break_duration_slider_span = (By.XPATH, "//span[@role='slider']")
+    slider_span = (By.XPATH, "//span[@role='slider']")
     remove_btn = (By.XPATH, "//button[contains(@class, 'remove')]")
-    slider_line_items = (By.XPATH, "//span[text()='{0}']")
+    slider_line_items = (By.XPATH, "//span[text()={0}]")
 
     contex_menu_btn = (By.XPATH, "//div[@class='actions']/button")
     draft_shift_contex_menu_btn = (By.XPATH, "//*[contains(@class, 'event-item-draft')]/..//div[@class='actions']/button")
@@ -32,3 +32,14 @@ class ScheduleManagerPageLocators(BasePageLocators):
 
     shift_in_clipboard_span = (By.XPATH, "//span[text()='Shift in clipboard']")
     cancel_shift_in_clip_btn = (By.XPATH, "//span[text()='Cancel']/..")
+
+    # template modal window
+    template_name_input = (By.XPATH, "//input[@id='name']")
+    next_btn_span = (By.XPATH, "//div[@class='modal-content__body']//button[contains(@class, 'MuiButton-containedPrimary')]/span[text()='Next']")
+    included_shifts_p = (By.XPATH, "//fieldset/following-sibling::p")
+    check_box_span = (By.XPATH, "//span[text()='{0}']")
+    shift_next_btn = (By.XPATH, "//div[contains(@class, 'MuiMobileStepper-positionStatic')]//span[text()='Next']")
+    shift_back_btn = (By.XPATH, "//div[contains(@class, 'MuiMobileStepper-positionStatic')]//span[text()='Back']")
+    template_edit_info_btn = (By.XPATH, "//b[text()='{0}']/../button")
+    select_template_div = (By.ID, "mui-component-select-templateId")
+    template_li = (By.XPATH, "//li[@aria-disabled='false']")
