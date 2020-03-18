@@ -51,12 +51,16 @@ class ScheduleManagerSQL(SQLGeneral):
         return True
 
 
-    def get_template_info(self):
+    def get_template_info(self, location_ids=None):
+        pl = ParseList()
         db = pyodbc.connect(self.db_connection(config.emp_manage_database))
         cursor = db.cursor()
         sql_string = "select t.id, t.TemplateName, t.startDate, t.endDate, t.expireDate, t.accessCode, " \
-                     "t.createdTS, t.createdUser from Templates t where t.AccessCode = {0}"
-        cursor.execute(sql_string.format(config.access_code))
+                     "t.createdTS, t.createdUser from Templates t " \
+                     "join ShiftsTemplates st on st.TemplateId = t.Id where t.AccessCode = {0} ".format(config.access_code)
+        if location_ids:
+            sql_string += " and st.LocationId " + pl.return_sql_in_list(location_ids)
+        cursor.execute(sql_string)
         res_db = cursor.fetchall()
         if len(res_db) > 0:
             columns = [column[0] for column in cursor.description]

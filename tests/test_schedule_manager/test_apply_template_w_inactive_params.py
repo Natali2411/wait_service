@@ -5,7 +5,7 @@ from src.adjust_request.adjust_request import AdjustRequest
 from src.general.permissions import Permission
 import config, pytest, os
 
-#@pytest.mark.skip
+@pytest.mark.skip
 class TestApplyTempWithInactiveUsersStores():
     """Test-case CRT-1399"""
 
@@ -153,6 +153,15 @@ class TestApplyTempWithInactiveUsersStores():
             log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
 
 
+    def test_make_user_active(self, log_obj, schedule_obj):
+        try:
+            schedule_obj.sql.change_user_active_status(user_name=config.user1, status=1)
+        except:
+            current_test = os.environ.get('PYTEST_CURRENT_TEST').split('::')
+            class_name, test_name = current_test[1], current_test[-1].split(' ')[0]
+            log_obj.log_and_save_info(test_name=test_name, class_name=class_name)
+
+    #@pytest.mark.skip
     def test_make_store_inactive_in_template(self, log_obj, schedule_obj):
         try:
             schedule_obj.sql.change_store_active_status(store_id=schedule_obj.shift_location_id, status=0)

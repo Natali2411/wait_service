@@ -40,11 +40,11 @@ def sql_config():
 
 @pytest.fixture(scope="module")
 def chr_driver(chr_options, sql_config):
+    path = os.path.abspath(os.path.dirname(__file__)) + "\src\exe\chromedriver.exe"
     driver = webdriver.Chrome(
-            executable_path="D:\Repositories\TimeClockAutomation\src\exe\chromedriver.exe",
-            options=chr_options, desired_capabilities={"loggingPrefs": {'browser': 'ALL'}})
+            executable_path=path, options=chr_options, desired_capabilities={"loggingPrefs": {'browser': 'ALL'}})
     yield driver
-    #driver.quit()
+    driver.quit()
 
 
 @pytest.fixture(scope="module")

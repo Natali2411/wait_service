@@ -593,13 +593,17 @@ class ScheduleManager(ClockInOut):
             button_locator=(self.locators.menu_item_li[0], self.locators.menu_item_li[1].format("Apply Template"))
         )
         if no_templates:
+            """
             popup_save_message = self.driver.find_elements(*self.base_locators.popup_message)
             if len(popup_save_message) > 0:
                 c.compare_str_in_str(searched_val="There are no any templates yet!".lower(),
                                      in_str_val=popup_save_message[0].text.lower())
-                templates = self.sql.get_template_info()
+                store_ids = [i["ID"] for i in self.sql.get_locations()]
+                templates = self.sql.get_template_info(location_ids=store_ids)
                 c.compare_int(0, len(templates))
-                return True
+                self.check_and_close_popup_message()
+                self.send_esc_key()
+                return True"""
         self.wait_button_and_click(button_locator=self.locators.select_template_div)
         template = random.choice(self.driver.find_elements(*self.locators.template_li))
         self.wait_button_and_click(button=template)
